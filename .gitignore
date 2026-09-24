@@ -1,3 +1,6 @@
 .DS_Store
 *.swp
 *~
+scans/
+secrets.h
+firmware/**/secrets.h
