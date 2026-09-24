@@ -31,7 +31,10 @@ A prototype for a patent-pending "Thermal and Visible-Light Skin Imaging System 
 - **Pins in code:** `I2C_SDA`, `I2C_SCL`, `ONEWIRE_PIN` at the top of the sketch.
 
 ## Firmware — `firmware/skin_scanner/skin_scanner.ino`
-- **Board:** "AI Thinker ESP32-CAM" (Espressif esp32 core), with PSRAM enabled.
+- **Board:** "AI Thinker ESP32-CAM" (Espressif esp32 core 3.3.12), with PSRAM enabled.
+- **Installed on the dev Mac:** the core plus these libraries: Adafruit AMG88xx 1.3.2, Adafruit ADS1X15 2.6.2, OneWire 2.3.8, DallasTemperature 4.0.6.
+- **Compile check for agents** (uses the CLI bundled with the Arduino IDE):
+  `"/Applications/Arduino IDE.app/Contents/Resources/app/lib/backend/resources/arduino-cli" --config-file ~/.arduinoIDE/arduino-cli.yaml compile --fqbn esp32:esp32:esp32cam firmware/skin_scanner`
 - **Libraries:** Adafruit AMG88xx, Adafruit ADS1X15, OneWire, DallasTemperature.
 - **Single file:** the `.ino` is the only source of truth. Pins, WiFi credentials and all settings live at its top. Don't split it into extra files.
 - **Serial:** 115200 baud. Send one character as a command:
@@ -71,9 +74,15 @@ If a sensor is missing, its field is `null`, so one dead sensor doesn't break th
 
 If the board sits on an ESP32-CAM-MB programmer shield, skip steps 3, 5 and 6: plug in USB and click Upload.
 
+## ▶ Next session starts here
+1. **Get the port showing up.** The FTDI adapter isn't detected on the Mac yet. Check with `ls /dev/cu.*`; you're looking for `/dev/cu.usbserial-…`. Suspects: a charge-only cable, a USB hub, or a CH340 driver.
+2. **Upload the sketch** using the upload guide above, with the board set to AI Thinker ESP32-CAM in the esp32 group.
+3. **Read the Serial Monitor at 115200.** The user pastes the `boot` and `wifi` lines. Any `false` or `null` tells us which sensor to debug.
+4. **Test `s` and `c`.** Then write the Python receiver: it reads the serial lines, saves the JPEG and draws the 8×8 heat map.
+
 ## Status
 - [x] Firmware v0.1 written: camera, AMG8833, ADS1115/GSR, DS18B20, JSON serial output, WiFi connects to hotspot (10 s timeout; auto-reconnects)
-- [ ] Compiles in the user's Arduino IDE
+- [x] Compiles (esp32 core 3.3.12, `esp32:esp32:esp32cam`): 31% flash, 18% RAM
 - [ ] Boot line shows all sensors `true`
 - [ ] `s` and `c` output verified
 - [ ] Python receiver + heat map (laptop side)
@@ -90,3 +99,4 @@ If the board sits on an ESP32-CAM-MB programmer shield, skip steps 3, 5 and 6: p
 - **2026-09-24 (S1c):** The user moved the wiring to I2C SDA=GPIO13, SCL=GPIO15, probe GPIO14. This fixes the GPIO12 boot-strapping risk. Sketch pins updated.
 - **2026-09-24 (S1d):** Recorded the full confirmed setup, including the 4.7kΩ pull-up on GPIO14. Moved the WiFi credentials into the git-ignored `secrets.h` (the repo is public). Committed and pushed.
 - **2026-09-24 (S1e):** Per the user, removed `secrets.h`. The WiFi credentials are back in the `.ino`, the single source of truth, with no separate files.
+- **2026-09-24 (S1f):** Installed the Espressif esp32 core and 4 libraries through the IDE's bundled CLI. The sketch compiles cleanly. The FTDI port isn't detected on the Mac yet: only Bluetooth ports show, so check the cable or adapter.
