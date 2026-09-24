@@ -3,6 +3,7 @@
 // Serial commands (115200 baud, type in Serial Monitor or send from Python):
 //   s  -> sensor reading (thermal 8x8 + probe temp + GSR) as one JSON line
 //   c  -> same as 's' plus a JPEG photo (base64) in the same JSON line
+//   w  -> WiFi status (connected, IP, signal strength)
 // Every message is one line of JSON starting with '{'. Ignore any other lines
 // (the ESP32 boot ROM prints garbage/text at startup).
 //
@@ -20,11 +21,17 @@
 #include "base64.h"
 
 // ---- Pins (see PROJECT_LOG.md for wiring) ----
-#define I2C_SDA      12   // AMG8833 + ADS1115 (shared bus)
-#define I2C_SCL      13
+#define I2C_SDA      13   // AMG8833 + ADS1115 (shared bus)
+#define I2C_SCL      15
 #define ONEWIRE_PIN  14   // DS18B20 probe, 4.7k pull-up to 3.3V
 
-#define ENABLE_WIFI  true // radio on, not connected. Set false if board brownout-resets.
+#define ENABLE_WIFI  true // set false if the board brownout-resets
+#if __has_include("secrets.h")  // WiFi credentials live in git-ignored secrets.h
+#include "secrets.h"
+#else
+#define WIFI_SSID    ""               // no secrets.h: WiFi just stays disconnected
+#define WIFI_PASS    ""
+#endif
 #define GSR_CHANNEL  0    // ADS1115 A0
 
 // AI-Thinker camera pins
@@ -88,11 +95,24 @@ void setup() {
   probe.begin();
   probeOk = probe.getDeviceCount() > 0;
 
-  if (ENABLE_WIFI) { WiFi.mode(WIFI_STA); WiFi.disconnect(); }
+  if (ENABLE_WIFI) {
+    WiFi.mode(WIFI_STA);
+    WiFi.setAutoReconnect(true);      // keeps retrying in the background if the hotspot drops
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    for (int i = 0; i < 20 && WiFi.status() != WL_CONNECTED; i++) delay(500); // wait max 10 s
+  }
 
-  Serial.printf("{\"type\":\"boot\",\"camera\":%s,\"amg8833\":%s,\"ads1115\":%s,\"ds18b20\":%s,\"psram\":%s,\"wifi\":%s}\n",
+  Serial.printf("{\"type\":\"boot\",\"camera\":%s,\"amg8833\":%s,\"ads1115\":%s,\"ds18b20\":%s,\"psram\":%s}\n",
                 camOk ? "true" : "false", amgOk ? "true" : "false", adsOk ? "true" : "false",
-                probeOk ? "true" : "false", psramFound() ? "true" : "false", ENABLE_WIFI ? "true" : "false");
+                probeOk ? "true" : "false", psramFound() ? "true" : "false");
+  printWifi();
+}
+
+void printWifi() {
+  bool up = WiFi.status() == WL_CONNECTED;
+  Serial.printf("{\"type\":\"wifi\",\"enabled\":%s,\"connected\":%s,\"ssid\":\"%s\",\"ip\":\"%s\",\"rssi\":%d}\n",
+                ENABLE_WIFI ? "true" : "false", up ? "true" : "false", WIFI_SSID,
+                up ? WiFi.localIP().toString().c_str() : "", up ? WiFi.RSSI() : 0);
 }
 
 void printNum(float v, int decimals) {
@@ -152,5 +172,6 @@ void loop() {
   char cmd = Serial.read();
   if (cmd == 's') sendReading(false);
   else if (cmd == 'c') sendReading(true);
+  else if (cmd == 'w') printWifi();
   // anything else (newlines etc.) is ignored
 }
