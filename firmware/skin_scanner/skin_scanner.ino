@@ -26,12 +26,8 @@
 #define ONEWIRE_PIN  14   // DS18B20 probe, 4.7k pull-up to 3.3V
 
 #define ENABLE_WIFI  true // set false if the board brownout-resets
-#if __has_include("secrets.h")  // WiFi credentials live in git-ignored secrets.h
-#include "secrets.h"
-#else
-#define WIFI_SSID    ""               // no secrets.h: WiFi just stays disconnected
-#define WIFI_PASS    ""
-#endif
+#define WIFI_SSID    "lakshay"
+#define WIFI_PASS    "123456789"
 #define GSR_CHANNEL  0    // ADS1115 A0
 
 // AI-Thinker camera pins

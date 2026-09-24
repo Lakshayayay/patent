@@ -33,9 +33,7 @@ A prototype for a patent-pending "Thermal and Visible-Light Skin Imaging System 
 ## Firmware — `firmware/skin_scanner/skin_scanner.ino`
 - **Board:** "AI Thinker ESP32-CAM" (Espressif esp32 core), with PSRAM enabled.
 - **Libraries:** Adafruit AMG88xx, Adafruit ADS1X15, OneWire, DallasTemperature.
-- **WiFi credentials:** kept in `firmware/skin_scanner/secrets.h`. Git ignores this file because the GitHub repo is public. On a fresh clone, create it with:
-  `#define WIFI_SSID "..."` and `#define WIFI_PASS "..."`
-  Without it the sketch still compiles; WiFi just stays disconnected.
+- **Single file:** the `.ino` is the only source of truth. Pins, WiFi credentials and all settings live at its top. Don't split it into extra files.
 - **Serial:** 115200 baud. Send one character as a command:
   - `s`: sensors only
   - `c`: sensors plus a JPEG photo
@@ -83,7 +81,7 @@ If the board sits on an ESP32-CAM-MB programmer shield, skip steps 3, 5 and 6: p
 
 ## Open issues / risks
 1. **Brownouts.** WiFi plus the camera draw current spikes. Power the board from the FTDI **5V** pin into the ESP32-CAM 5V pin, not from 3.3V. If it still resets, set `ENABLE_WIFI false`.
-2. **The hotspot must be 2.4 GHz.** The ESP32 can't see 5 GHz networks. On an iPhone, turn on "Maximize Compatibility". The password lives in the git-ignored `secrets.h`.
+2. **The hotspot must be 2.4 GHz.** The ESP32 can't see 5 GHz networks. On an iPhone, turn on "Maximize Compatibility". The credentials are in the `.ino`.
 3. **Thermal orientation.** How the 8×8 grid maps onto the photo depends on how the AMG8833 is mounted relative to the camera. It needs calibrating on the laptop side.
 
 ## Session log
@@ -91,3 +89,4 @@ If the board sits on an ESP32-CAM-MB programmer shield, skip steps 3, 5 and 6: p
 - **2026-09-24 (S1b):** Added the hotspot WiFi connection, the `w` command and the upload guide.
 - **2026-09-24 (S1c):** The user moved the wiring to I2C SDA=GPIO13, SCL=GPIO15, probe GPIO14. This fixes the GPIO12 boot-strapping risk. Sketch pins updated.
 - **2026-09-24 (S1d):** Recorded the full confirmed setup, including the 4.7kΩ pull-up on GPIO14. Moved the WiFi credentials into the git-ignored `secrets.h` (the repo is public). Committed and pushed.
+- **2026-09-24 (S1e):** Per the user, removed `secrets.h`. The WiFi credentials are back in the `.ino`, the single source of truth, with no separate files.
